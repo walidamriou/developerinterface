@@ -1,0 +1,93 @@
+{
+  "name": "developerinterface",
+  "displayName": "Developer Interface",
+  "description": "to make developer commands interactions simple",
+  "version": "1.0.0",
+  "publisher": "walidamriou",
+  "icon": "media/icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "developerinterfaceContainer",
+          "title": "DeveloperInterface",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "developerinterfaceContainer": [
+        {
+          "id": "developerinterfaceView",
+          "name": "Tasks",
+          "type": "tree"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "developerinterfaceView",
+        "contents": "No DeveloperInterface config found in .developerinterface/.\n[Create from default template](command:developerinterface.createTemplate)\n[Create from Makefile](command:developerinterface.createFromMakefile)",
+        "when": "view == developerinterfaceView"
+      }
+    ],
+    "commands": [
+      {
+        "command": "developerinterface.executeTask",
+        "title": "Execute Task",
+        "category": "DeveloperInterface"
+      },
+      {
+        "command": "developerinterface.createTemplate",
+        "title": "Create DeveloperInterface Template",
+        "category": "DeveloperInterface",
+        "icon": "$(add)"
+      },
+      {
+        "command": "developerinterface.reloadConfig",
+        "title": "Reload DeveloperInterface Config",
+        "category": "DeveloperInterface",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "developerinterface.createFromMakefile",
+        "title": "Create DeveloperInterface Config from Makefile",
+        "category": "DeveloperInterface",
+        "icon": "$(file-code)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "developerinterface.createTemplate",
+          "when": "view == developerinterfaceView",
+          "group": "navigation"
+        },
+        {
+          "command": "developerinterface.reloadConfig",
+          "when": "view == developerinterfaceView",
+          "group": "navigation@1"
+        }
+      ]
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/developerinterface/developerinterface"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "keywords": [
+    "tasks",
+    "menu",
+    "automation",
+    "commands",
+    "sidebar"
+  ]
+}
