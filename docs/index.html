@@ -6,6 +6,7 @@
     <meta name="description" content="Developer Interface — VS Code extension that turns a JSON config into a visual sidebar task menu.">
     <meta name="author" content="walidamriou">
     <title>Developer Interface</title>
+    <link rel="icon" href="icon/icon.png" sizes="any">
     <style>
         html, body {
             background-color: #f5f5f5;
@@ -39,6 +40,14 @@
             text-align: center;
             margin-bottom: 2%;
             margin-top: 5%;
+        }
+
+        .project-logo {
+            width: 120px;
+            max-width: 30vw;
+            height: auto;
+            margin-bottom: 12px;
+            border-radius: 18px;
         }
 
         section {
@@ -170,6 +179,7 @@
 <main>
 
     <header>
+        <img src="icon/icon.png" alt="Developer Interface logo" class="project-logo">
         <h1 style="font-size: 3rem; font-weight: 700;">DEVELOPER INTERFACE</h1>
         <h3 style="font-size: 1.6rem; font-weight: 400;">to make developer commands interactions simple</h3>
         <br>
@@ -178,22 +188,22 @@
         <a href="https://github.com/walidamriou/developerinterface" target="_blank" rel="noopener" class="pill" style="color: #fff; background-color: #161616;">GitHub</a>
     </header>
 
-    <section style="background-color: #CDFBE4; text-align: left; padding-top: 5%; padding-bottom: 5%;" class="txt">
-        <h1 style="font-size: 3rem;">What it does</h1>
+    <section style="background-color: #dfcfff; text-align: left; padding-top: 5%; padding-bottom: 5%;" class="txt">
+        <h1 style="font-size: 3rem;">What is Developer Interface?</h1>
         <div style="width: 80%;">
             <h5 style="font-size: 1.65rem; font-weight: 300; text-align: justify; line-height: 1.7;">
-                Open the Developer Interface sidebar to view your project tasks and run them directly in the terminal with a single click. It removes the need to copy and paste commands, search through scripts, or remember long command lines. Define your tasks in a simple JSON file, and the extension turns them into a clean sidebar workflow. It works across web, firmware, Docker, and script-based projects, and it supports multiple config files for different contexts.
+                Developer Interface adds a task panel to the VS Code sidebar. It reads task definitions from .developerinterface/di-config-*.json, displays them as clickable items, and runs each command in the integrated terminal. You can create the config from a default template or generate it from a Makefile, and any save to the config is reloaded automatically in the view.
             </h5>
         </div>
     </section>
 
-    <section id="quickstart" style="background-color: #D9EDDF; text-align: left; padding-top: 5%; padding-bottom: 5%;" class="txt">
+    <section id="quickstart" style="background-color: #ffeee3; text-align: left; padding-top: 5%; padding-bottom: 5%;" class="txt">
         <h1 style="font-size: 3rem;">Quick Start</h1>
         <div style="width: 80%;">
-            <ol class="steps" style="font-size: 1.35rem; font-weight: 300; line-height: 1.8;">
+            <ol class="steps" style="font-size: 1.5rem; font-weight: 300; line-height: 1.8;">
                 <li>Open your project in VS Code.</li>
                 <li>Open Developer Interface view and create the template.</li>
-                <li>Edit <code>.developerinterface/di-config-project.json</code>.</li>
+                <li>Edit .developerinterface/di-config-project.json.</li>
                 <li>then from the Developer Interface, run your tasks.</li>
             </ol>
         </div>
