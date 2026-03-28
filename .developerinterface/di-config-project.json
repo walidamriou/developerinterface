@@ -1,0 +1,25 @@
+{
+  "version": "1.0.0",
+  "title": "Project",
+  "icon": "list",
+  "tasks": [
+    {
+      "label": "Build",
+      "description": "Package extension into .vsix",
+      "command": "./tools/build.sh",
+      "icon": "tools"
+    },
+    {
+      "label": "Run Dev",
+      "description": "Start extension development window",
+      "command": "./tools/dev.sh",
+      "icon": "play"
+    },
+    {
+      "label": "Install VSIX",
+      "description": "Install latest packaged extension",
+      "command": "./tools/install.sh",
+      "icon": "download"
+    }
+  ]
+}
