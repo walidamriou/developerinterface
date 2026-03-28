@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Dev Script (tools/dev.sh)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "./tools/dev.sh",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Run Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ]
+    }
+  ]
+}
