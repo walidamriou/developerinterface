@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Developer Interface — VS Code extension that turns a JSON config into a visual sidebar task menu.">
+    <meta name="author" content="walidamriou">
+    <title>Developer Interface</title>
+    <style>
+        html, body {
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            font-family: monospace;
+            opacity: 0.9;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        footer {
+            padding: 4%;
+            background-color: #000;
+            color: #fff;
+            text-align: center;
+        }
+
+        header {
+            padding: 4%;
+            text-align: center;
+            margin-bottom: 2%;
+            margin-top: 5%;
+        }
+
+        section {
+            padding: 1%;
+        }
+
+        /* responsive text indent */
+        @media only screen and (max-width: 600px) {
+            .txt { padding-left: 5%; }
+        }
+        @media only screen and (min-width: 601px) and (max-width: 1024px) {
+            .txt { padding-left: 10%; }
+        }
+        @media only screen and (min-width: 1025px) {
+            .txt { padding-left: 20%; }
+        }
+
+        /* code blocks */
+        pre {
+            background-color: #111;
+            color: #c8d3f5;
+            border-radius: 10px;
+            padding: 18px 22px;
+            overflow-x: auto;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            width: 75%;
+            margin: 10px 0 18px 0;
+        }
+
+        /* inline code */
+        code {
+            background-color: #ddd;
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-size: 1rem;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            font-size: inherit;
+        }
+
+        /* tables */
+        table {
+            border-collapse: collapse;
+            width: 80%;
+            margin: 10px 0 18px 0;
+            font-size: 0.92rem;
+        }
+        th {
+            text-align: left;
+            padding: 8px 12px;
+            border-bottom: 2px solid #bbb;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #ccc;
+            vertical-align: top;
+        }
+
+        /* step list */
+        ol.steps {
+            list-style: none;
+            counter-reset: steps;
+            padding: 0;
+            width: 80%;
+        }
+        ol.steps li {
+            counter-increment: steps;
+            padding: 6px 0 6px 44px;
+            position: relative;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            line-height: 1.7;
+        }
+        ol.steps li::before {
+            content: counter(steps);
+            position: absolute;
+            left: 0;
+            top: 6px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid currentColor;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        /* pill link */
+        .pill {
+            border-radius: 20px;
+            padding: 10px 20px;
+            border: .1rem solid #000;
+            font-size: 1.15rem;
+            display: inline-block;
+            margin: 6px 4px;
+        }
+
+        /* FAQ details */
+        details {
+            border-bottom: 1px solid #bbb;
+            padding: 8px 0;
+        }
+        summary {
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 6px 0;
+            list-style: none;
+        }
+        summary::-webkit-details-marker { display: none; }
+        summary::before { content: "+ "; }
+        details[open] > summary::before { content: "− "; }
+        .detail-body {
+            padding: 8px 0 4px 16px;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+    </style>
+</head>
+<body>
+<main>
+
+    <header>
+        <h1 style="font-size: 3rem; font-weight: 700;">DEVELOPER INTERFACE</h1>
+        <h3 style="font-size: 1.6rem; font-weight: 400;">to make developer commands interactions simple</h3>
+        <br>
+        <a href="#quickstart" class="pill" style="color: #fff; background-color: #2f4858;">Quick Start</a>
+        <a href="#config" class="pill" style="color: #fff; background-color: #000;">Config</a>
+        <a href="https://github.com/walidamriou/developerinterface" target="_blank" rel="noopener" class="pill" style="color: #fff; background-color: #161616;">GitHub</a>
+    </header>
+
+    <section style="background-color: #CDFBE4; text-align: left; padding-top: 5%; padding-bottom: 5%;" class="txt">
+        <h1 style="font-size: 3rem;">What it does</h1>
+        <div style="width: 80%;">
+            <h5 style="font-size: 1.65rem; font-weight: 300; text-align: justify; line-height: 1.7;">
+                Open the Developer Interface sidebar to view your project tasks and run them directly in the terminal with a single click. It removes the need to copy and paste commands, search through scripts, or remember long command lines. Define your tasks in a simple JSON file, and the extension turns them into a clean sidebar workflow. It works across web, firmware, Docker, and script-based projects, and it supports multiple config files for different contexts.
+            </h5>
+        </div>
+    </section>
+
+    <section id="quickstart" style="background-color: #D9EDDF; text-align: left; padding-top: 5%; padding-bottom: 5%;" class="txt">
+        <h1 style="font-size: 3rem;">Quick Start</h1>
+        <div style="width: 80%;">
+            <ol class="steps" style="font-size: 1.35rem; font-weight: 300; line-height: 1.8;">
+                <li>Open your project in VS Code.</li>
+                <li>Open Developer Interface view and create the template.</li>
+                <li>Edit <code>.developerinterface/di-config-project.json</code>.</li>
+                <li>then from the Developer Interface, run your tasks.</li>
+            </ol>
+        </div>
+    </section>
+
+    <section id="config" style="background-color: #f5f5f5; text-align: left; padding-top: 5%; padding-bottom: 5%;" class="txt">
+        <h1 style="font-size: 3rem;">Minimal Config Example</h1>
+        <div style="width: 80%;">
+            <pre><code>{
+  "version": "1.0.0",
+  "title": "My Project",
+  "tasks": [
+    { "label": "Build", "command": "make build", "icon": "tools" },
+    { "label": "Run", "command": "make run", "icon": "play" }
+  ]
+}</code></pre>
+            <h5 style="font-size: 1.3rem; font-weight: 300; line-height: 1.8;">
+                File name: <code>.developerinterface/di-config-*.json</code><br>
+                Useful icons: <code>tools</code>, <code>play</code>, <code>testing</code>, <code>terminal</code>
+            </h5>
+        </div>
+    </section>
+
+
+    <section style="background-color: #161616; color: #fff; text-align: center; padding: 2%;">
+        <h1 style="font-size: 2.4rem; color: #fff;">
+            Github
+            <a href="https://github.com/walidamriou/developerinterface" target="_blank" rel="noopener"
+               style="font-size: 1.7rem; color: #fff; background-color: #1F1F1F; border-radius: 20px; padding: 8px 12px; border: .1rem solid #3c3c3c;">
+                developerinterface
+            </a>
+        </h1>
+    </section>
+
+</main>
+
+<footer>
+    <p>Developer Interface &nbsp;·&nbsp; by <a href="https://walidamriou.com" target="_blank" rel="noopener" style="color: #aaa;">Walid A.</a> &nbsp;·&nbsp; License &nbsp;·&nbsp; © 2026</p>
+</footer>
+</body>
+</html>
