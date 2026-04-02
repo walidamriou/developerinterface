@@ -1,0 +1,62 @@
+{
+    "id": "docker",
+    "displayName": "Docker Project",
+    "description": "Create a Docker starter project with common container tasks",
+    "defaultSuffix": "docker-tools",
+    "config": {
+        "version": "1.0.0",
+        "icon": "vm",
+        "tasks": [
+            {
+                "label": "Init",
+                "description": "Create Docker starter files from template folder",
+                "command": "",
+                "action": "initProjectTemplate",
+                "projectTemplateFolder": "docker/hello",
+                "icon": "rocket"
+            },
+            {
+                "label": "Build Image",
+                "description": "Build the Docker image",
+                "command": "IMAGE=$(awk -F= '/^LABEL[[:space:]]+app.name=/{gsub(/\"/,\"\",$2); print $2; exit}' Dockerfile); [ -n \"$IMAGE\" ] || IMAGE=$(basename \"$PWD\"); docker build -t \"$IMAGE\" .",
+                "icon": "tools"
+            },
+            {
+                "label": "List Builds",
+                "description": "List built images for this project name",
+                "command": "IMAGE=$(awk -F= '/^LABEL[[:space:]]+app.name=/{gsub(/\"/,\"\",$2); print $2; exit}' Dockerfile); [ -n \"$IMAGE\" ] || IMAGE=$(basename \"$PWD\"); docker images --filter reference=\"${IMAGE}*\"",
+                "icon": "list-unordered"
+            },
+            {
+                "label": "Run Container",
+                "description": "Run a container from the built image",
+                "command": "IMAGE=$(awk -F= '/^LABEL[[:space:]]+app.name=/{gsub(/\"/,\"\",$2); print $2; exit}' Dockerfile); [ -n \"$IMAGE\" ] || IMAGE=$(basename \"$PWD\"); NAME=\"${IMAGE}-app\"; docker rm -f \"$NAME\" >/dev/null 2>&1 || true; docker run -d --name \"$NAME\" \"$IMAGE\"",
+                "icon": "play"
+            },
+            {
+                "label": "Run Shell",
+                "description": "Open an interactive shell inside the container",
+                "command": "IMAGE=$(awk -F= '/^LABEL[[:space:]]+app.name=/{gsub(/\"/,\"\",$2); print $2; exit}' Dockerfile); [ -n \"$IMAGE\" ] || IMAGE=$(basename \"$PWD\"); docker run --rm -it \"$IMAGE\" /bin/sh",
+                "icon": "terminal"
+            },
+            {
+                "label": "Stop",
+                "description": "Stop the running container for this project",
+                "command": "IMAGE=$(awk -F= '/^LABEL[[:space:]]+app.name=/{gsub(/\"/,\"\",$2); print $2; exit}' Dockerfile); [ -n \"$IMAGE\" ] || IMAGE=$(basename \"$PWD\"); NAME=\"${IMAGE}-app\"; if docker ps -q --filter name=^/${NAME}$ | grep -q .; then docker stop \"$NAME\" >/dev/null && docker rm \"$NAME\" >/dev/null; elif docker ps -aq --filter name=^/${NAME}$ | grep -q .; then docker rm -f \"$NAME\" >/dev/null; else echo \"No container found with name '$NAME'\"; fi",
+                "icon": "debug-stop"
+            },
+            {
+                "label": "Remove Image",
+                "description": "Remove the built image",
+                "command": "IMAGE=$(awk -F= '/^LABEL[[:space:]]+app.name=/{gsub(/\"/,\"\",$2); print $2; exit}' Dockerfile); [ -n \"$IMAGE\" ] || IMAGE=$(basename \"$PWD\"); NAME=\"${IMAGE}-app\"; docker rm -f \"$NAME\" >/dev/null 2>&1 || true; CIDS=$(docker ps -aq --filter ancestor=\"$IMAGE\"); if [ -n \"$CIDS\" ]; then docker rm -f $CIDS >/dev/null; fi; docker rmi \"$IMAGE\"",
+                "icon": "trash"
+            },
+            {
+                "label": "Logs",
+                "description": "Follow logs of the last running container",
+                "command": "IMAGE=$(awk -F= '/^LABEL[[:space:]]+app.name=/{gsub(/\"/,\"\",$2); print $2; exit}' Dockerfile); [ -n \"$IMAGE\" ] || IMAGE=$(basename \"$PWD\"); NAME=\"${IMAGE}-app\"; if docker ps -aq --filter name=^/${NAME}$ | grep -q .; then docker logs -f \"$NAME\"; else echo \"No container found with name '$NAME'. Run 'Run Container' first.\"; fi",
+                "icon": "output"
+            }
+        ]
+    }
+}
