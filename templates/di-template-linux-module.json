@@ -1,0 +1,45 @@
+{
+  "version": "1.0.0",
+  "title": "Linux Module Development",
+  "icon": "terminal-linux",
+  "tasks": [
+    {
+      "label": "Init",
+      "description": "Create Linux module dev starter files from template folder",
+      "command": "",
+      "action": "initProjectTemplate",
+      "projectTemplateFolder": "linux-module",
+      "icon": "rocket"
+    },
+    {
+      "label": "Build Module",
+      "description": "Build the current kernel module",
+      "command": "MOD_DIR=${MODULE_DIR:-$PWD/hello}; if [ ! -d \"$MOD_DIR\" ]; then if [ -d \"$PWD/l01\" ]; then MOD_DIR=\"$PWD/l01\"; elif [ -d \"$PWD/lkm-001-helloworld\" ]; then MOD_DIR=\"$PWD/lkm-001-helloworld\"; elif [ -f \"$PWD/Makefile\" ]; then MOD_DIR=\"$PWD\"; else echo \"Missing module directory: $MOD_DIR\"; exit 1; fi; fi; make -C \"$MOD_DIR\"",
+      "icon": "play"
+    },
+    {
+      "label": "Clean Module",
+      "description": "Clean generated module build artifacts",
+      "command": "MOD_DIR=${MODULE_DIR:-$PWD/hello}; if [ ! -d \"$MOD_DIR\" ]; then if [ -d \"$PWD/l01\" ]; then MOD_DIR=\"$PWD/l01\"; elif [ -d \"$PWD/lkm-001-helloworld\" ]; then MOD_DIR=\"$PWD/lkm-001-helloworld\"; elif [ -f \"$PWD/Makefile\" ]; then MOD_DIR=\"$PWD\"; else echo \"Missing module directory: $MOD_DIR\"; exit 1; fi; fi; make -C \"$MOD_DIR\" clean",
+      "icon": "trash"
+    },
+    {
+      "label": "Insert Module",
+      "description": "Insert module into the running kernel",
+      "command": "MOD_DIR=${MODULE_DIR:-$PWD/hello}; if [ ! -d \"$MOD_DIR\" ]; then if [ -d \"$PWD/l01\" ]; then MOD_DIR=\"$PWD/l01\"; elif [ -d \"$PWD/lkm-001-helloworld\" ]; then MOD_DIR=\"$PWD/lkm-001-helloworld\"; elif [ -f \"$PWD/Makefile\" ]; then MOD_DIR=\"$PWD\"; else echo \"Missing module directory: $MOD_DIR\"; exit 1; fi; fi; KO_FILE=$(ls \"$MOD_DIR\"/*.ko 2>/dev/null | head -n1); if [ -z \"$KO_FILE\" ]; then echo \"No .ko file found in $MOD_DIR\"; exit 1; fi; sudo insmod \"$KO_FILE\"",
+      "icon": "arrow-up"
+    },
+    {
+      "label": "Remove Module",
+      "description": "Remove module from the running kernel",
+      "command": "MOD_DIR=${MODULE_DIR:-$PWD/hello}; if [ ! -d \"$MOD_DIR\" ]; then if [ -d \"$PWD/l01\" ]; then MOD_DIR=\"$PWD/l01\"; elif [ -d \"$PWD/lkm-001-helloworld\" ]; then MOD_DIR=\"$PWD/lkm-001-helloworld\"; elif [ -f \"$PWD/Makefile\" ]; then MOD_DIR=\"$PWD\"; fi; fi; KO_FILE=$(ls \"$MOD_DIR\"/*.ko 2>/dev/null | head -n1); MODULE_NAME=${MODULE_NAME:-$(basename \"$KO_FILE\" .ko)}; if [ -z \"$MODULE_NAME\" ]; then echo \"No module name found. Set MODULE_NAME or build first.\"; exit 1; fi; sudo rmmod \"$MODULE_NAME\"",
+      "icon": "arrow-down"
+    },
+    {
+      "label": "Kernel Log Tail",
+      "description": "Inspect latest kernel log lines",
+      "command": "sudo dmesg | tail -n 80",
+      "icon": "output"
+    }
+  ]
+}
