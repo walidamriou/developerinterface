@@ -1,0 +1,50 @@
+{
+  "id": "rust-simple",
+  "displayName": "Rust Simple Project",
+  "description": "Create a simple Rust CLI starter project",
+  "defaultSuffix": "rust-simple-tools",
+  "config": {
+    "version": "1.0.0",
+    "icon": "project",
+    "tasks": [
+      {
+        "label": "Init",
+        "description": "Create simple Rust starter files from template folder",
+        "command": "",
+        "action": "initProjectTemplate",
+        "projectTemplateFolder": "rust/hello",
+        "icon": "rocket"
+      },
+      {
+        "label": "Build",
+        "description": "Compile the Rust project",
+        "command": "cargo build",
+        "icon": "tools"
+      },
+      {
+        "label": "Run",
+        "description": "Run the Rust project",
+        "command": "cargo run",
+        "icon": "play"
+      },
+      {
+        "label": "Test",
+        "description": "Run unit tests",
+        "command": "cargo test",
+        "icon": "check"
+      },
+      {
+        "label": "Check",
+        "description": "Type-check without building binaries",
+        "command": "cargo check",
+        "icon": "check"
+      },
+      {
+        "label": "Clean",
+        "description": "Remove build artifacts",
+        "command": "cargo clean",
+        "icon": "trash"
+      }
+    ]
+  }
+}
