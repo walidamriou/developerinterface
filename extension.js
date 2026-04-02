@@ -14,6 +14,9 @@ const path = require('path');
 // Global variables
 let allConfigs = []; // array of { filePath, config }
 let treeDataProvider = null;
+let extensionContext = null;
+
+const TEMPLATE_FILE_PATTERN = /^di-template-.*\.json$/i;
 
 // -----------------------------------------------------------------
 // Default tasks used when creating a new template
@@ -36,6 +39,23 @@ const defaultTasks = [
     description: 'Run test suite',
     command: 'echo "Test command here"',
     icon: 'check'
+  }
+];
+
+// -----------------------------------------------------------------
+// Built-in fallback template if templates folder is missing/invalid
+// -----------------------------------------------------------------
+const fallbackTemplates = [
+  {
+    id: 'default',
+    displayName: 'Default Template',
+    description: 'Create a new tasks list file with example tasks',
+    defaultSuffix: 'my-project-tools',
+    config: {
+      version: '1.0.0',
+      icon: 'list',
+      tasks: defaultTasks
+    }
   }
 ];
 
@@ -108,6 +128,196 @@ function getConfigDir() {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders || workspaceFolders.length === 0) return null;
   return path.join(workspaceFolders[0].uri.fsPath, '.developerinterface');
+}
+
+// -----------------------------------------------------------------
+// Get extension templates folder path
+// -----------------------------------------------------------------
+function getTemplatesDir(context) {
+  return path.join(context.extensionPath, 'templates');
+}
+
+// -----------------------------------------------------------------
+// Validate and normalize a template object loaded from disk
+// -----------------------------------------------------------------
+function normalizeTemplate(rawTemplate, fileName) {
+  if (!rawTemplate || typeof rawTemplate !== 'object') return null;
+  const baseName = path.basename(fileName, '.json');
+  const id = (rawTemplate.id || baseName.replace(/^di-template-/, '')).toString().trim();
+  // Support both template shapes:
+  // 1) Wrapped: { displayName, defaultSuffix, config: { version, icon, tasks } }
+  // 2) Legacy : { title, version, icon, tasks }
+  const templateConfig = (rawTemplate.config && typeof rawTemplate.config === 'object')
+    ? rawTemplate.config
+    : rawTemplate;
+  const tasks = Array.isArray(templateConfig.tasks) ? templateConfig.tasks : [];
+
+  const normalizedTasks = tasks
+    .filter(task => {
+      if (!task || typeof task.label !== 'string') return false;
+      if (typeof task.command === 'string' && task.command.trim().length > 0) return true;
+      return typeof task.action === 'string' && task.action.trim().length > 0;
+    })
+    .map(task => ({
+      label: task.label,
+      description: typeof task.description === 'string' ? task.description : '',
+      command: typeof task.command === 'string' ? task.command : '',
+      action: typeof task.action === 'string' ? task.action : undefined,
+      projectTemplateFolder: typeof task.projectTemplateFolder === 'string' ? task.projectTemplateFolder : undefined,
+      icon: typeof task.icon === 'string' ? task.icon : 'terminal'
+    }));
+
+  return {
+    id,
+    displayName: (rawTemplate.displayName || rawTemplate.title || slugToTitle(id)).toString(),
+    description: (rawTemplate.description || 'Create a new tasks list file from this template').toString(),
+    defaultSuffix: (rawTemplate.defaultSuffix || `${id}-tools`).toString(),
+    config: {
+      version: typeof templateConfig.version === 'string' ? templateConfig.version : '1.0.0',
+      icon: typeof templateConfig.icon === 'string' ? templateConfig.icon : 'list',
+      tasks: normalizedTasks
+    }
+  };
+}
+
+// -----------------------------------------------------------------
+// Copy one file or folder recursively
+// -----------------------------------------------------------------
+function copyEntryRecursive(sourcePath, targetPath, overwrite) {
+  const fileName = path.basename(sourcePath);
+  const skipFilePatterns = [
+    /\.ko$/,
+    /\.o$/,
+    /\.mod$/,
+    /\.mod\.c$/,
+    /^Module\.symvers$/,
+    /^modules\.order$/,
+    /^\..*\.cmd$/,
+    /^\.module-common\.o$/,
+    /^\.tmp_versions$/
+  ];
+
+  if (skipFilePatterns.some(pattern => pattern.test(fileName))) {
+    return;
+  }
+
+  const sourceStat = fs.statSync(sourcePath);
+  if (sourceStat.isDirectory()) {
+    if (!fs.existsSync(targetPath)) {
+      fs.mkdirSync(targetPath, { recursive: true });
+    }
+    const children = fs.readdirSync(sourcePath);
+    for (const child of children) {
+      copyEntryRecursive(path.join(sourcePath, child), path.join(targetPath, child), overwrite);
+    }
+    return;
+  }
+
+  if (fs.existsSync(targetPath) && !overwrite) {
+    return;
+  }
+  fs.copyFileSync(sourcePath, targetPath);
+}
+
+// -----------------------------------------------------------------
+// Execute init project action by copying template files into workspace
+// -----------------------------------------------------------------
+async function executeInitProjectTask(task) {
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (!workspaceFolders || workspaceFolders.length === 0) {
+    vscode.window.showWarningMessage('Open a workspace folder before initializing a project template');
+    return;
+  }
+
+  if (!extensionContext) {
+    vscode.window.showErrorMessage('Extension context is not available');
+    return;
+  }
+
+  const projectTemplateFolder = task.projectTemplateFolder;
+  if (!projectTemplateFolder) {
+    vscode.window.showErrorMessage('Invalid init task: missing projectTemplateFolder');
+    return;
+  }
+
+  const sourceDir = path.join(extensionContext.extensionPath, 'templates', 'projects', projectTemplateFolder);
+  if (!fs.existsSync(sourceDir) || !fs.statSync(sourceDir).isDirectory()) {
+    vscode.window.showErrorMessage(`Project template folder not found: ${projectTemplateFolder}`);
+    return;
+  }
+
+  const destinationDir = workspaceFolders[0].uri.fsPath;
+  const confirm = await vscode.window.showWarningMessage(
+    `Do you really want to initialize this project in "${destinationDir}"?`,
+    { modal: true },
+    'Yes'
+  );
+
+  if (confirm !== 'Yes') {
+    return;
+  }
+
+  const conflicts = fs.readdirSync(sourceDir)
+    .filter(entry => fs.existsSync(path.join(destinationDir, entry)));
+
+  let overwrite = false;
+  if (conflicts.length > 0) {
+    const overwriteConfirm = await vscode.window.showWarningMessage(
+      `Some files already exist (${conflicts.slice(0, 5).join(', ')}${conflicts.length > 5 ? ', ...' : ''}). Overwrite them?`,
+      { modal: true },
+      'Overwrite',
+      'Cancel'
+    );
+    if (overwriteConfirm !== 'Overwrite') {
+      return;
+    }
+    overwrite = true;
+  }
+
+  try {
+    const entries = fs.readdirSync(sourceDir);
+    for (const entry of entries) {
+      copyEntryRecursive(path.join(sourceDir, entry), path.join(destinationDir, entry), overwrite);
+    }
+    vscode.window.showInformationMessage(`Project initialized from template "${projectTemplateFolder}"`);
+    refreshTree();
+  } catch (error) {
+    vscode.window.showErrorMessage(`Error initializing project template: ${error.message}`);
+  }
+}
+
+// -----------------------------------------------------------------
+// Load templates from templates/di-template-*.json in the extension
+// -----------------------------------------------------------------
+function loadTemplates(context) {
+  const templatesDir = getTemplatesDir(context);
+  if (!fs.existsSync(templatesDir)) {
+    return fallbackTemplates;
+  }
+
+  try {
+    const files = fs.readdirSync(templatesDir)
+      .filter(fileName => TEMPLATE_FILE_PATTERN.test(fileName))
+      .sort();
+
+    const templates = files.flatMap(fileName => {
+      const templatePath = path.join(templatesDir, fileName);
+      try {
+        const content = fs.readFileSync(templatePath, 'utf8');
+        const parsed = JSON.parse(content);
+        const normalized = normalizeTemplate(parsed, fileName);
+        return normalized ? [normalized] : [];
+      } catch (error) {
+        vscode.window.showWarningMessage(`Invalid template "${fileName}": ${error.message}`);
+        return [];
+      }
+    });
+
+    return templates.length > 0 ? templates : fallbackTemplates;
+  } catch (error) {
+    vscode.window.showWarningMessage(`Error loading templates: ${error.message}`);
+    return fallbackTemplates;
+  }
 }
 
 // -----------------------------------------------------------------
@@ -276,20 +486,25 @@ async function createFromMakefile() {
 // -----------------------------------------------------------------
 // Create a new config file 
 // -----------------------------------------------------------------
-async function createTemplate() {
+async function createTemplate(context) {
   const configDir = getConfigDir();
   if (!configDir) {
     vscode.window.showWarningMessage('Open a workspace folder before creating a developerinterface template');
     return;
   }
 
+  const templates = loadTemplates(context);
+
+  const templateChoices = templates.map(template => ({
+    label: `$(list-ordered) ${template.displayName}`,
+    description: template.description,
+    value: `template:${template.id}`,
+    template
+  }));
+
   const choice = await vscode.window.showQuickPick(
     [
-      {
-        label: '$(list-ordered) Default Template',
-        description: 'Create a new tasks list file with example tasks',
-        value: 'default'
-      },
+      ...templateChoices,
       {
         label: '$(file-code) From Makefile',
         description: 'Generate a tasks list file from Makefile targets in the workspace root',
@@ -306,8 +521,14 @@ async function createTemplate() {
     return;
   }
 
+  const selectedTemplate = choice.template;
+  if (!selectedTemplate) {
+    vscode.window.showWarningMessage('No template selected');
+    return;
+  }
+
   const configIdentity = await promptForConfigSuffix({
-    defaultValue: 'my-project-tools',
+    defaultValue: selectedTemplate.defaultSuffix,
     promptSuffix: 'for your tasks list'
   });
   if (!configIdentity) return;
@@ -330,10 +551,10 @@ async function createTemplate() {
 
   try {
     const config = {
-      version: '1.0.0',
+      version: selectedTemplate.config.version || '1.0.0',
       title,
-      icon: 'list',
-      tasks: defaultTasks
+      icon: selectedTemplate.config.icon || 'list',
+      tasks: selectedTemplate.config.tasks || []
     };
     if (!fs.existsSync(configDir)) fs.mkdirSync(configDir, { recursive: true });
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
@@ -348,8 +569,18 @@ async function createTemplate() {
 // -----------------------------------------------------------------
 // Execute a task in the terminal
 // -----------------------------------------------------------------
-function executeTask(task) {
-  if (!task || !task.command) {
+async function executeTask(task) {
+  if (!task) {
+    vscode.window.showErrorMessage('Invalid task configuration');
+    return;
+  }
+
+  if (task.action === 'initProjectTemplate') {
+    await executeInitProjectTask(task);
+    return;
+  }
+
+  if (!task.command) {
     vscode.window.showErrorMessage('Invalid task configuration');
     return;
   }
@@ -382,6 +613,7 @@ function refreshTree(showMessage) {
 // -----------------------------------------------------------------
 function activate(context) {
   console.log('DeveloperInterface extension activated');
+  extensionContext = context;
 
   allConfigs = loadAllConfigs();
 
@@ -390,7 +622,7 @@ function activate(context) {
 
   const executeCommand = vscode.commands.registerCommand(
     'developerinterface.executeTask',
-    (task) => { executeTask(task); }
+    async (task) => { await executeTask(task); }
   );
 
   const reloadCommand = vscode.commands.registerCommand(
@@ -401,7 +633,7 @@ function activate(context) {
   const createTemplateCommand = vscode.commands.registerCommand(
     'developerinterface.createTemplate',
     async () => {
-      await createTemplate();
+      await createTemplate(context);
       refreshTree();
     }
   );
