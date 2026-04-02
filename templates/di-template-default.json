@@ -5,7 +5,7 @@
   "defaultSuffix": "my-project-tools",
   "config": {
     "version": "1.0.0",
-    "icon": "list",
+    "icon": "project",
     "tasks": [
       {
         "label": "Build",
