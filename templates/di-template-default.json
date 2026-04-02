@@ -1,0 +1,30 @@
+{
+  "id": "default",
+  "displayName": "Default Template",
+  "description": "Create a new tasks list file with example tasks",
+  "defaultSuffix": "my-project-tools",
+  "config": {
+    "version": "1.0.0",
+    "icon": "list",
+    "tasks": [
+      {
+        "label": "Build",
+        "description": "Compile project",
+        "command": "echo \"Build command here\"",
+        "icon": "tools"
+      },
+      {
+        "label": "Run",
+        "description": "Start application",
+        "command": "echo \"Run command here\"",
+        "icon": "play"
+      },
+      {
+        "label": "Test",
+        "description": "Run test suite",
+        "command": "echo \"Test command here\"",
+        "icon": "check"
+      }
+    ]
+  }
+}
