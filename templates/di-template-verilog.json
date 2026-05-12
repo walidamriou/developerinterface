@@ -1,0 +1,25 @@
+{
+  "version": "1.0.0",
+  "title": "Verilog",
+  "icon": "circuit-board",
+  "tasks": [
+    {
+      "label": "Build",
+      "description": "Compile Verilog files",
+      "command": "iverilog -o sim *.v",
+      "icon": "tools"
+    },
+    {
+      "label": "Run",
+      "description": "Run simulation",
+      "command": "vvp sim",
+      "icon": "play"
+    },
+    {
+      "label": "Test",
+      "description": "Open waveform viewer",
+      "command": "./tools/surfer wave.vcd",
+      "icon": "check"
+    }
+  ]
+}
