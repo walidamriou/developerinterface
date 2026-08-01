@@ -1,0 +1,14 @@
+{
+  "projects": [
+    {
+      "name": "project1",
+      "descriptions": "xxxx",
+      "config": "./project1.json"
+    },
+    {
+      "name": "project2",
+      "descriptions": "xxxx",
+      "config": "./project2.json"
+    }
+  ]
+}

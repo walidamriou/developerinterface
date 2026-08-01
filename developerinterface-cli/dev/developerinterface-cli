@@ -1,0 +1,339 @@
+#!/usr/bin/env zsh
+
+PROJECTS_FILE="./developerinterface-cli-projects.json"
+
+CURRENT_PROJECT=""
+CURRENT_PROJECT_CONFIG=""
+
+HISTFILE="${HOME}/.developerinterface_history"
+HISTSIZE=1000
+SAVEHIST=1000
+
+setopt HIST_IGNORE_DUPS
+setopt HIST_FIND_NO_DUPS
+
+fc -R "$HISTFILE" 2>/dev/null || true
+
+build_prompt() {
+
+    PROMPT=''
+
+    PROMPT+="%K{57}%F{15} DeveloperInterface "
+    PROMPT+="%F{57}%K{19}"
+
+    if [[ -n "$CURRENT_PROJECT" ]]; then
+
+        PROMPT+="%K{19}%F{15} Projects "
+        PROMPT+="%F{19}%K{53}"
+
+        PROMPT+="%K{53}%F{15} ${CURRENT_PROJECT} "
+        PROMPT+="%F{53}%K{default}"
+
+    else
+
+        PROMPT+="%K{19}%F{15} Home "
+        PROMPT+="%F{19}%K{default}"
+
+    fi
+
+    PROMPT+="%f%k"
+
+}
+
+show_help() {
+cat <<EOF
+
+DeveloperInterface CLI commands:
+
+about - info about DeveloperInterface cli 
+help - Show this help
+projects - List projects
+list - List projects
+add - Add project from project JSON file
+back - Return to root
+exit - Leave project or exit DeveloperInterface
+quit - Leave project or exit DeveloperInterface
+<project_name> - Enter project
+
+EOF
+}
+
+show_project_help() {
+
+    echo
+    echo "Project commands:"
+    echo
+
+    jq -r '
+        .config.tasks[] |
+        "\(.label)\n    \(.description)\n"
+    ' "$CURRENT_PROJECT_CONFIG"
+
+    echo "list"
+    echo "    List project commands"
+    echo
+
+    echo "back"
+    echo "    Return to DeveloperInterface"
+    echo
+
+    echo "exit"
+    echo "    Leave project"
+    echo
+
+}
+
+list_projects() {
+
+    if [[ ! -f "$PROJECTS_FILE" ]]; then
+        echo "No projects"
+        return
+    fi
+
+    jq -r '.projects[].name' "$PROJECTS_FILE"
+
+}
+
+list_project_commands() {
+
+    jq -r '
+        .config.tasks[] |
+        "\(.label) - \(.description)"
+    ' "$CURRENT_PROJECT_CONFIG"
+
+}
+
+project_exists() {
+
+    [[ -f "$PROJECTS_FILE" ]] || return 1
+
+    jq -e \
+        --arg name "$1" \
+        '.projects[] | select(.name == $name)' \
+        "$PROJECTS_FILE" \
+        >/dev/null 2>&1
+
+}
+
+enter_project() {
+
+    local PROJECT_NAME="$1"
+
+    CURRENT_PROJECT="$PROJECT_NAME"
+
+    CURRENT_PROJECT_CONFIG=$(
+        jq -r \
+        --arg name "$PROJECT_NAME" \
+        '.projects[] | select(.name == $name) | .config' \
+        "$PROJECTS_FILE"
+    )
+
+}
+
+leave_project() {
+
+    CURRENT_PROJECT=""
+    CURRENT_PROJECT_CONFIG=""
+
+}
+
+add_project() {
+
+    echo -n "Project JSON path: "
+    read -r JSON_FILE
+
+    if [[ ! -f "$JSON_FILE" ]]; then
+        echo "File not found"
+        return
+    fi
+
+    PROJECT_ID=$(jq -r '.id' "$JSON_FILE")
+    PROJECT_NAME=$(jq -r '.displayName' "$JSON_FILE")
+
+    PROJECT_PATH=$(dirname "$JSON_FILE")
+
+    if [[ "$PROJECT_ID" == "null" || "$PROJECT_NAME" == "null" ]]; then
+        echo "Invalid project file"
+        return
+    fi
+
+    mkdir -p "$(dirname "$PROJECTS_FILE")"
+
+    if [[ ! -f "$PROJECTS_FILE" ]]; then
+        echo '{"projects":[]}' > "$PROJECTS_FILE"
+    fi
+
+    EXISTS=$(jq -r \
+        --arg id "$PROJECT_ID" \
+        '.projects[] | select(.id == $id) | .id' \
+        "$PROJECTS_FILE")
+
+    if [[ -n "$EXISTS" ]]; then
+        echo "Project already exists"
+        return
+    fi
+
+    TMP_FILE=$(mktemp)
+
+    jq \
+        --arg id "$PROJECT_ID" \
+        --arg name "$PROJECT_NAME" \
+        --arg path "$PROJECT_PATH" \
+        --arg config "$JSON_FILE" \
+        '
+        .projects += [{
+            id: $id,
+            name: $name,
+            path: $path,
+            config: $config
+        }]
+        ' \
+        "$PROJECTS_FILE" > "$TMP_FILE"
+
+    mv "$TMP_FILE" "$PROJECTS_FILE"
+
+    echo
+    echo "Project added:"
+    echo "$PROJECT_NAME"
+    echo
+
+}
+
+while true; do
+
+    INPUT=""
+
+    build_prompt
+
+    vared -h -p "$(print -P "$PROMPT ")" INPUT
+
+    [[ -n "$INPUT" ]] && {
+        print -s -- "$INPUT"
+        fc -W "$HISTFILE"
+    }
+
+    CMD="${INPUT%% *}"
+    ARGS="${INPUT#"$CMD"}"
+    ARGS="${ARGS# }"
+
+    case "$CMD" in
+
+        help)
+
+            if [[ -n "$CURRENT_PROJECT" ]]; then
+                show_project_help
+            else
+                show_help
+            fi
+
+            ;;
+
+        projects)
+
+            list_projects
+
+            ;;
+
+        list)
+
+            if [[ -n "$CURRENT_PROJECT" ]]; then
+                list_project_commands
+            else
+                list_projects
+            fi
+
+            ;;
+
+        add)
+
+            add_project
+
+            ;;
+
+        back)
+
+            leave_project
+
+            ;;
+
+        exit|quit)
+
+            if [[ -n "$CURRENT_PROJECT" ]]; then
+
+                leave_project
+
+            else
+
+                echo "Bye"
+                exit 0
+
+            fi
+
+            ;;
+
+        "")
+
+            ;;
+
+        *)
+
+            if [[ -n "$CURRENT_PROJECT" ]]; then
+
+                TASK_COMMAND=$(
+                    jq -r \
+                    --arg cmd "${CMD:l}" \
+                    '
+                    .config.tasks[]
+                    | select(.label | ascii_downcase == $cmd)
+                    | .command
+                    ' \
+                    "$CURRENT_PROJECT_CONFIG"
+                )
+
+                if [[ -n "$TASK_COMMAND" && "$TASK_COMMAND" != "null" ]]; then
+
+                    eval "$TASK_COMMAND" || true
+
+                elif command -v "$CMD" >/dev/null 2>&1; then
+
+                    FULL_COMMAND="$CMD $ARGS"
+
+                    echo -n "This command will execute outside DeveloperInterface: '$FULL_COMMAND'. Continue? (y/n): "
+                    read -r ANSWER
+
+                    if [[ "$ANSWER" =~ ^[Yy]$ ]]; then
+                        eval "$FULL_COMMAND" || true
+                    fi
+
+                else
+
+                    echo "Unknown project command: $CMD"
+
+                fi
+
+            elif project_exists "$CMD"; then
+
+                enter_project "$CMD"
+
+            elif command -v "$CMD" >/dev/null 2>&1; then
+
+                FULL_COMMAND="$CMD $ARGS"
+
+                echo -n "This command will execute outside DeveloperInterface: '$FULL_COMMAND'. Continue? (y/n): "
+                read -r ANSWER
+
+                if [[ "$ANSWER" =~ ^[Yy]$ ]]; then
+                    eval "$FULL_COMMAND" || true
+                fi
+
+            else
+
+                echo "Unknown command: $CMD"
+
+            fi
+
+            ;;
+
+    esac
+
+done
